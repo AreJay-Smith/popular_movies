@@ -1,6 +1,7 @@
 package com.arejaysmith.popularmovies;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -74,6 +75,12 @@ public class MovieListFragment extends Fragment {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
+        if (id == R.id.action_settings) {
+
+            startActivity(new Intent(getActivity(), SettingsActivity.class));
+            return true;
+        }
+
         if (id == R.id.refresh) {
 
             FetchMovieTask movieTask = new FetchMovieTask();
@@ -112,9 +119,6 @@ public class MovieListFragment extends Fragment {
 
         }
 
-        public void bindMovieImage(Movie movie) {
-            Picasso.with(getActivity()).load(movie.getPosterPath()).resize(240, 120).into(mMovieView);
-        }
     }
 
     private class MovieAdapter extends RecyclerView.Adapter<PosterHolder> {
@@ -153,7 +157,7 @@ public class MovieListFragment extends Fragment {
     }
 
 
-
+    // Create Async task to fetch Movie data
     public class FetchMovieTask extends AsyncTask<String, Void, ArrayList<Movie>> {
 
         private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
@@ -223,7 +227,7 @@ public class MovieListFragment extends Fragment {
                 final String API_KEY = "api_key";
 
                 Uri builtUri = Uri.parse(MOVIE_BASE_URL).buildUpon()
-                        .appendEncodedPath(POPULAR)
+                        .appendEncodedPath(TOP_RATED)
                         .appendQueryParameter(API_KEY, BuildConfig.MOVIE_API_KEY)
                         .build();
 

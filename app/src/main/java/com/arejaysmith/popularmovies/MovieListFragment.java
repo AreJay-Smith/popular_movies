@@ -2,10 +2,12 @@ package com.arejaysmith.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -39,6 +41,8 @@ import java.util.List;
 
 
 public class MovieListFragment extends Fragment {
+
+
 
     private RecyclerView mMovieRecyclerView;
     private ArrayList<Movie> mMovieItems = new ArrayList<>();
@@ -159,6 +163,7 @@ public class MovieListFragment extends Fragment {
 
     // Create Async task to fetch Movie data
     public class FetchMovieTask extends AsyncTask<String, Void, ArrayList<Movie>> {
+        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
         private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
         JSONObject mMovieObject = new JSONObject();
@@ -222,12 +227,11 @@ public class MovieListFragment extends Fragment {
             try {
 
                 final String MOVIE_BASE_URL = "http://api.themoviedb.org/3/movie/";
-                final String TOP_RATED = "top_rated";
-                final String POPULAR = "popular";
+                final String LIST_CHOICE = mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular));
                 final String API_KEY = "api_key";
 
                 Uri builtUri = Uri.parse(MOVIE_BASE_URL).buildUpon()
-                        .appendEncodedPath(TOP_RATED)
+                        .appendEncodedPath(LIST_CHOICE)
                         .appendQueryParameter(API_KEY, BuildConfig.MOVIE_API_KEY)
                         .build();
 

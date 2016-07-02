@@ -112,9 +112,6 @@ public class MovieListFragment extends Fragment {
 
         }
 
-        public void bindMovieImage(Movie movie) {
-            Picasso.with(getActivity()).load(movie.getPosterPath()).resize(240, 120).into(mMovieView);
-        }
     }
 
     private class MovieAdapter extends RecyclerView.Adapter<PosterHolder> {

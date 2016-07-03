@@ -1,10 +1,14 @@
 package com.arejaysmith.popularmovies;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -74,10 +78,17 @@ public class MovieListFragment extends Fragment {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
+        if (id == R.id.action_settings) {
+
+            startActivity(new Intent(getActivity(), SettingsActivity.class));
+            return true;
+        }
+
+        // Used for debuging purposes, currently hidden by xml line
         if (id == R.id.refresh) {
 
             FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute("Hello");
+            movieTask.execute();
 
             return true;
         }
@@ -93,6 +104,27 @@ public class MovieListFragment extends Fragment {
         // Wire up the recyclerView
         mMovieRecyclerView = (RecyclerView) rootView.findViewById(R.id.movie_recycler_view);
 
+        // Set listener
+        mMovieRecyclerView.addOnItemTouchListener(
+                new RecyclerItemClickListener(getActivity(), new RecyclerItemClickListener.OnItemClickListener() {
+                    @Override public void onItemClick(View view, int position) {
+
+                        // Pass movie object to detail activity using parcelable
+                        Movie movieItem = mMovieItems.get(position);
+                        Intent mIntent = new Intent(getActivity(), MovieDetail.class);
+                        Bundle mBundle = new Bundle();
+                        mBundle.putParcelable("test", movieItem);
+                        mIntent.putExtras(mBundle);
+
+                        startActivity(mIntent);
+
+                        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+
+                    }
+                })
+        );
+
         // Set up the layout for the grid in the recycler view
         mMovieRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),2));
 
@@ -105,12 +137,14 @@ public class MovieListFragment extends Fragment {
 
         private ImageView mMovieView;
 
+
         public PosterHolder(View itemView) {
             super(itemView);
 
-            mMovieView = (ImageView) itemView.findViewById(R.id.poster_img);
+            mMovieView = (ImageView) itemView.findViewById(R.id.poster_img_holder);
 
         }
+
 
     }
 
@@ -123,10 +157,10 @@ public class MovieListFragment extends Fragment {
             mMovieItems = movieItems;
         }
 
+
         @Override
         public PosterHolder onCreateViewHolder (ViewGroup viewGroup, int viewType) {
 
-//            ImageView imageView = new ImageView(getActivity());
             View imageView = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.poster_layout, viewGroup, false);
 
             return new PosterHolder(imageView);
@@ -150,12 +184,11 @@ public class MovieListFragment extends Fragment {
     }
 
 
-
+    // Create Async task to fetch Movie data
     public class FetchMovieTask extends AsyncTask<String, Void, ArrayList<Movie>> {
+        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
         private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
-        JSONObject mMovieObject = new JSONObject();
-        JSONArray mMoviesArray = new JSONArray();
 
         private ArrayList<Movie> getMovieDataFromJson(String forecastJsonStr) throws JSONException {
 
@@ -171,27 +204,19 @@ public class MovieListFragment extends Fragment {
                 JSONObject currentObject = movieResults.getJSONObject(i);
                 Movie movie = new Movie();
 
-                // Create new local JSON
-                mMovieObject = new JSONObject();
-
                 //grab needed variables
-                mMovieObject.put("id", currentObject.getInt("id"));
                 movie.setId(currentObject.getInt("id"));
-                mMovieObject.put("title", currentObject.getString("original_title"));
                 movie.setTitle(currentObject.getString("original_title"));
-                mMovieObject.put("description", currentObject.getString("overview"));
                 movie.setDescription(currentObject.getString("overview"));
-                mMovieObject.put("rating", currentObject.getDouble("vote_average"));
                 movie.setRating(currentObject.getDouble("vote_average"));
+                movie.setDate(currentObject.getString("release_date"));
 
                 // Make adjustments for image
                 String posterPath = "http://image.tmdb.org/t/p/w500" + currentObject.getString("poster_path");
-                mMovieObject.put("poster_path", posterPath);
                 movie.setPosterPath(posterPath);
 
                 Log.v(LOG_TAG, posterPath);
 
-                mMoviesArray.put(movieObject);
                 moviesArray.add(movie);
 
             }
@@ -215,12 +240,11 @@ public class MovieListFragment extends Fragment {
             try {
 
                 final String MOVIE_BASE_URL = "http://api.themoviedb.org/3/movie/";
-                final String TOP_RATED = "top_rated";
-                final String POPULAR = "popular";
+                final String LIST_CHOICE = mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular));
                 final String API_KEY = "api_key";
 
                 Uri builtUri = Uri.parse(MOVIE_BASE_URL).buildUpon()
-                        .appendEncodedPath(POPULAR)
+                        .appendEncodedPath(LIST_CHOICE)
                         .appendQueryParameter(API_KEY, BuildConfig.MOVIE_API_KEY)
                         .build();
 
@@ -296,7 +320,7 @@ public class MovieListFragment extends Fragment {
         }
     }
 
-    // Update the adapter after onpost execute
+    // Update the adapter after onpost execute or whenever called
     private void setupAdapter() {
         if (isAdded()){
             mMovieRecyclerView.setAdapter(new MovieAdapter(mMovieItems));

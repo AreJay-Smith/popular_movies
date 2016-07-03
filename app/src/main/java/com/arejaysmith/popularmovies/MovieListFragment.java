@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -104,6 +105,26 @@ public class MovieListFragment extends Fragment {
         // Wire up the recyclerView
         mMovieRecyclerView = (RecyclerView) rootView.findViewById(R.id.movie_recycler_view);
 
+        // Set listener
+        mMovieRecyclerView.addOnItemTouchListener(
+                new RecyclerItemClickListener(getActivity(), new RecyclerItemClickListener.OnItemClickListener() {
+                    @Override public void onItemClick(View view, int position) {
+
+                        Movie movieItem = mMovieItems.get(position);
+                        Intent mIntent = new Intent(getActivity(), MovieDetail.class);
+                        Bundle mBundle = new Bundle();
+                        mBundle.putParcelable("test", movieItem);
+                        mIntent.putExtras(mBundle);
+
+                        startActivity(mIntent);
+
+                        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+
+                    }
+                })
+        );
+
         // Set up the layout for the grid in the recycler view
         mMovieRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),2));
 
@@ -116,12 +137,14 @@ public class MovieListFragment extends Fragment {
 
         private ImageView mMovieView;
 
+
         public PosterHolder(View itemView) {
             super(itemView);
 
             mMovieView = (ImageView) itemView.findViewById(R.id.poster_img);
 
         }
+
 
     }
 
@@ -134,10 +157,11 @@ public class MovieListFragment extends Fragment {
             mMovieItems = movieItems;
         }
 
+
         @Override
         public PosterHolder onCreateViewHolder (ViewGroup viewGroup, int viewType) {
 
-//            ImageView imageView = new ImageView(getActivity());
+//          ImageView imageView = new ImageView(getActivity());
             View imageView = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.poster_layout, viewGroup, false);
 
             return new PosterHolder(imageView);
@@ -195,6 +219,7 @@ public class MovieListFragment extends Fragment {
                 movie.setDescription(currentObject.getString("overview"));
                 mMovieObject.put("rating", currentObject.getDouble("vote_average"));
                 movie.setRating(currentObject.getDouble("vote_average"));
+                movie.setDate(currentObject.getString("release_date"));
 
                 // Make adjustments for image
                 String posterPath = "http://image.tmdb.org/t/p/w500" + currentObject.getString("poster_path");

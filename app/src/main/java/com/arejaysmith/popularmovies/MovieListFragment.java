@@ -43,8 +43,6 @@ import java.util.List;
 
 public class MovieListFragment extends Fragment {
 
-
-
     private RecyclerView mMovieRecyclerView;
     private ArrayList<Movie> mMovieItems = new ArrayList<>();
 
@@ -86,10 +84,11 @@ public class MovieListFragment extends Fragment {
             return true;
         }
 
+        // Used for debuging purposes, currently hidden by xml line
         if (id == R.id.refresh) {
 
             FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute("Hello");
+            movieTask.execute();
 
             return true;
         }
@@ -110,6 +109,7 @@ public class MovieListFragment extends Fragment {
                 new RecyclerItemClickListener(getActivity(), new RecyclerItemClickListener.OnItemClickListener() {
                     @Override public void onItemClick(View view, int position) {
 
+                        // Pass movie object to detail activity using parcelable
                         Movie movieItem = mMovieItems.get(position);
                         Intent mIntent = new Intent(getActivity(), MovieDetail.class);
                         Bundle mBundle = new Bundle();
@@ -141,7 +141,7 @@ public class MovieListFragment extends Fragment {
         public PosterHolder(View itemView) {
             super(itemView);
 
-            mMovieView = (ImageView) itemView.findViewById(R.id.poster_img);
+            mMovieView = (ImageView) itemView.findViewById(R.id.poster_img_holder);
 
         }
 
@@ -161,7 +161,6 @@ public class MovieListFragment extends Fragment {
         @Override
         public PosterHolder onCreateViewHolder (ViewGroup viewGroup, int viewType) {
 
-//          ImageView imageView = new ImageView(getActivity());
             View imageView = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.poster_layout, viewGroup, false);
 
             return new PosterHolder(imageView);
@@ -190,8 +189,6 @@ public class MovieListFragment extends Fragment {
         SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
         private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
-        JSONObject mMovieObject = new JSONObject();
-        JSONArray mMoviesArray = new JSONArray();
 
         private ArrayList<Movie> getMovieDataFromJson(String forecastJsonStr) throws JSONException {
 
@@ -207,28 +204,19 @@ public class MovieListFragment extends Fragment {
                 JSONObject currentObject = movieResults.getJSONObject(i);
                 Movie movie = new Movie();
 
-                // Create new local JSON
-                mMovieObject = new JSONObject();
-
                 //grab needed variables
-                mMovieObject.put("id", currentObject.getInt("id"));
                 movie.setId(currentObject.getInt("id"));
-                mMovieObject.put("title", currentObject.getString("original_title"));
                 movie.setTitle(currentObject.getString("original_title"));
-                mMovieObject.put("description", currentObject.getString("overview"));
                 movie.setDescription(currentObject.getString("overview"));
-                mMovieObject.put("rating", currentObject.getDouble("vote_average"));
                 movie.setRating(currentObject.getDouble("vote_average"));
                 movie.setDate(currentObject.getString("release_date"));
 
                 // Make adjustments for image
                 String posterPath = "http://image.tmdb.org/t/p/w500" + currentObject.getString("poster_path");
-                mMovieObject.put("poster_path", posterPath);
                 movie.setPosterPath(posterPath);
 
                 Log.v(LOG_TAG, posterPath);
 
-                mMoviesArray.put(movieObject);
                 moviesArray.add(movie);
 
             }
@@ -332,7 +320,7 @@ public class MovieListFragment extends Fragment {
         }
     }
 
-    // Update the adapter after onpost execute
+    // Update the adapter after onpost execute or whenever called
     private void setupAdapter() {
         if (isAdded()){
             mMovieRecyclerView.setAdapter(new MovieAdapter(mMovieItems));

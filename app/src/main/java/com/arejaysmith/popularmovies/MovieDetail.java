@@ -13,12 +13,12 @@ public class MovieDetail extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_movie_detail);
+        setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         getSupportFragmentManager().beginTransaction()
-                .add(R.id.activity_movie_detail, new MovieDetailFragment())
+                .add(R.id.activity_main, new MovieDetailFragment())
                 .commit();
 
 

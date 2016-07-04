@@ -17,9 +17,11 @@ public class MovieDetail extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.activity_movie_detail, new MovieDetailFragment())
-                .commit();
+        if(savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.activity_movie_detail, new MovieDetailFragment())
+                    .commit();
+        }
 
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);

@@ -3,6 +3,8 @@ package com.arejaysmith.popularmovies;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -22,6 +24,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TableRow;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -45,23 +48,40 @@ public class MovieListFragment extends Fragment {
 
     private RecyclerView mMovieRecyclerView;
     private ArrayList<Movie> mMovieItems = new ArrayList<>();
+    private Context context = getActivity();
 
 
     public MovieListFragment() {
         // Required empty public constructor
     }
 
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getSystemService(context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
     @Override
     public void onStart() {
         super.onStart();
-        FetchMovieTask movieTask = new FetchMovieTask();
-        movieTask.execute();
+
     }
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Check to see if the network is active first
+        if (isNetworkAvailable()) {
+            FetchMovieTask movieTask = new FetchMovieTask();
+            movieTask.execute();
+        }
+        else {
+
+            Toast.makeText(getActivity(), "No internet connection",
+                    Toast.LENGTH_LONG).show();
+        }
 
     }
 
@@ -117,10 +137,6 @@ public class MovieListFragment extends Fragment {
                         mIntent.putExtras(mBundle);
 
                         startActivity(mIntent);
-
-                        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-
                     }
                 })
         );
@@ -325,6 +341,17 @@ public class MovieListFragment extends Fragment {
         if (isAdded()){
             mMovieRecyclerView.setAdapter(new MovieAdapter(mMovieItems));
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        // Save the user's current game state
+
+        //TODO: Create bundle to pass between saved instance
+        
+
+        // Always call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
     }
 
 }

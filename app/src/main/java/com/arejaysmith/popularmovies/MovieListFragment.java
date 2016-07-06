@@ -49,6 +49,7 @@ public class MovieListFragment extends Fragment {
     private RecyclerView mMovieRecyclerView;
     private ArrayList<Movie> mMovieItems = new ArrayList<>();
     private Context context = getActivity();
+    protected String currentFilter;
 
 
     public MovieListFragment() {
@@ -65,12 +66,21 @@ public class MovieListFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
+        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
+        if (mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular)) != currentFilter ) {
+
+            FetchMovieTask movieTask = new FetchMovieTask();
+            movieTask.execute();
+        }
+
     }
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
 
         // Check to see if the network is active first
         if (isNetworkAvailable()) {
@@ -79,6 +89,7 @@ public class MovieListFragment extends Fragment {
         }
         else {
 
+            // TODO: create a broadcast receiver for when a connection is available
             Toast.makeText(getActivity(), "No internet connection",
                     Toast.LENGTH_LONG).show();
         }
@@ -257,6 +268,7 @@ public class MovieListFragment extends Fragment {
 
                 final String MOVIE_BASE_URL = "http://api.themoviedb.org/3/movie/";
                 final String LIST_CHOICE = mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular));
+                currentFilter = LIST_CHOICE;
                 final String API_KEY = "api_key";
 
                 Uri builtUri = Uri.parse(MOVIE_BASE_URL).buildUpon()
@@ -331,8 +343,21 @@ public class MovieListFragment extends Fragment {
         @Override
         protected void onPostExecute(ArrayList<Movie> movies) {
 
+            // Set the created list to a local variable
             mMovieItems = movies;
             setupAdapter();
+
+            // Display the current filter
+            switch (currentFilter) {
+
+                case "popular":
+                    getActivity().setTitle(getString(R.string.movie_list_label_popular) + " Movies");
+                    break;
+
+                case "top_rated":
+                    getActivity().setTitle(getString(R.string.movie_list_label_top_rated) + " Movies");
+                    break;
+            }
         }
     }
 
@@ -348,7 +373,7 @@ public class MovieListFragment extends Fragment {
         // Save the user's current game state
 
         //TODO: Create bundle to pass between saved instance
-        
+
 
         // Always call the superclass so it can save the view hierarchy state
         super.onSaveInstanceState(savedInstanceState);

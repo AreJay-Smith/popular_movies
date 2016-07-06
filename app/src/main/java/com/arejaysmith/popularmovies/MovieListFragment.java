@@ -63,21 +63,6 @@ public class MovieListFragment extends Fragment {
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-
-        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-
-        if (mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular)) != currentFilter ) {
-
-            FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute();
-        }
-
-    }
-
-
-    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -92,6 +77,20 @@ public class MovieListFragment extends Fragment {
             // TODO: create a broadcast receiver for when a connection is available
             Toast.makeText(getActivity(), "No internet connection",
                     Toast.LENGTH_LONG).show();
+        }
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
+        if (mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular)) != currentFilter && isNetworkAvailable() ) {
+
+            FetchMovieTask movieTask = new FetchMovieTask();
+            movieTask.execute();
         }
 
     }
@@ -345,7 +344,11 @@ public class MovieListFragment extends Fragment {
 
             // Set the created list to a local variable
             mMovieItems = movies;
-            setupAdapter();
+
+            // If there's no data then don't start the adapter
+            if(mMovieItems != null) {
+                setupAdapter();
+            }
 
             // Display the current filter
             switch (currentFilter) {

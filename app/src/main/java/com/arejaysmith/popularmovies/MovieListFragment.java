@@ -44,12 +44,11 @@ import java.util.HashMap;
 import java.util.List;
 
 
-public class MovieListFragment extends Fragment {
+public class MovieListFragment extends Fragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private RecyclerView mMovieRecyclerView;
     private ArrayList<Movie> mMovieItems = new ArrayList<>();
     private Context context = getActivity();
-    protected String currentFilter;
 
 
     public MovieListFragment() {
@@ -66,13 +65,11 @@ public class MovieListFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
-        // Check to see if the network is active first
         if (isNetworkAvailable()) {
+
             FetchMovieTask movieTask = new FetchMovieTask();
             movieTask.execute();
-        }
-        else {
+        }else {
 
             // TODO: create a broadcast receiver for when a connection is available
             Toast.makeText(getActivity(), "No internet connection",
@@ -84,14 +81,6 @@ public class MovieListFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-
-        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-
-        if (mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular)) != currentFilter && isNetworkAvailable() ) {
-
-            FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute();
-        }
 
     }
 
@@ -130,6 +119,10 @@ public class MovieListFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_movie_list, container, false);
+
+        // Register a new listener to change when the preferences are update
+        PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .registerOnSharedPreferenceChangeListener(this);
 
         // Wire up the recyclerView
         mMovieRecyclerView = (RecyclerView) rootView.findViewById(R.id.movie_recycler_view);
@@ -267,7 +260,6 @@ public class MovieListFragment extends Fragment {
 
                 final String MOVIE_BASE_URL = "http://api.themoviedb.org/3/movie/";
                 final String LIST_CHOICE = mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular));
-                currentFilter = LIST_CHOICE;
                 final String API_KEY = "api_key";
 
                 Uri builtUri = Uri.parse(MOVIE_BASE_URL).buildUpon()
@@ -342,6 +334,8 @@ public class MovieListFragment extends Fragment {
         @Override
         protected void onPostExecute(ArrayList<Movie> movies) {
 
+            SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
             // Set the created list to a local variable
             mMovieItems = movies;
 
@@ -351,7 +345,7 @@ public class MovieListFragment extends Fragment {
             }
 
             // Display the current filter
-            switch (currentFilter) {
+            switch (mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular))) {
 
                 case "popular":
                     getActivity().setTitle(getString(R.string.movie_list_label_popular) + " Movies");
@@ -382,4 +376,19 @@ public class MovieListFragment extends Fragment {
         super.onSaveInstanceState(savedInstanceState);
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+
+        FetchMovieTask movieTask = new FetchMovieTask();
+        movieTask.execute();
+
+    }
+
+    @Override
+    public void onDestroy() {
+
+        // Unregister listener
+        PreferenceManager.getDefaultSharedPreferences(getActivity()).unregisterOnSharedPreferenceChangeListener(this);
+        super.onDestroy();
+    }
 }

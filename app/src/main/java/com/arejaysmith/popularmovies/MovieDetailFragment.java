@@ -32,9 +32,6 @@ public class MovieDetailFragment extends Fragment {
 
     private JSONArray mJason;
     private ArrayList<String> mTrailerUrls;
-    private ListView mTrailerView;
-    private ListView list;
-    private CustomAdapter mTrailerAdapter;
     private LinearLayout mMovieTrailerContainer;
 
 
@@ -79,8 +76,6 @@ public class MovieDetailFragment extends Fragment {
     private void setAdapter(String[] trailerTitles){
 
         if (trailerTitles != null) {
-
-            mTrailerAdapter.clear();
 
             for (String trailer : trailerTitles) {
 
@@ -140,57 +135,6 @@ public class MovieDetailFragment extends Fragment {
 
         mMovieTrailerContainer = (LinearLayout) view.findViewById(R.id.movie_trailer_container);
 
-        ArrayList<String> hello = new ArrayList<String>();
-        hello.add("Hello");
-        hello.add("from");
-        hello.add("the");
-        hello.add("other");
-        hello.add("side");
-
-        // Create adapter
-        mTrailerAdapter = new CustomAdapter(hello, getActivity());
-        ListView listView = (ListView) view.findViewById(R.id.trailer_list);
-        listView.setAdapter(mTrailerAdapter);
-
-
         return view;
-    }
-
-    public class CustomAdapter extends ArrayAdapter<String> {
-
-        private ArrayList<String> dataSet;
-        Activity mContext;
-
-        public CustomAdapter(ArrayList<String> data, Activity context) {
-            super(context, R.layout.trailer_list_item, data);
-            this.dataSet = data;
-            this.mContext=context;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            LayoutInflater layoutInflater = mContext.getLayoutInflater();
-            View row = layoutInflater.inflate(R.layout.trailer_list_item, null, true);
-
-            TextView trailerTitle = (TextView) row.findViewById(R.id.trailer_title_item);
-//            ImageView trailerImg = (ImageView) row.findViewById(R.id.trailer_play_item);
-//            trailerImg.setImageDrawable(R.drawable.trailer_play);
-
-            trailerTitle.setText(dataSet.get(position));
-
-
-            return row;
-        }
-
-    }
-
-
-
-    private static class trailerHolder{
-
-        public TextView trailerTitle;
-
-        public  ImageView playTrailerImg;
     }
 }

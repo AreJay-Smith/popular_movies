@@ -299,7 +299,7 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
                 }
                 moviesJsonStr = buffer.toString();
 
-                Log.v(LOG_TAG, "Forecast JSON String: " + moviesJsonStr);
+                Log.v(LOG_TAG, "Movies JSON String: " + moviesJsonStr);
 
 
             } catch (IOException e) {

@@ -72,15 +72,13 @@ public class MovieDetailFragment extends Fragment {
         final String[] title = mTrailerTitles.toArray(new String[mTrailerTitles.size()]);
 
         // Call to set up the adapter and make the changes
-        setAdapter(title);
+        addRowView(title);
 
     }
 
-    private void setAdapter(String[] trailerTitles){
+    private void addRowView(String[] trailerTitles){
 
         if (trailerTitles != null) {
-
-            mTrailerAdapter.clear();
 
             for (String trailer : trailerTitles) {
 
@@ -88,7 +86,6 @@ public class MovieDetailFragment extends Fragment {
                         R.layout.trailer_list_item, null);
 
                 // New data is back from the server.  Hooray!
-
                 mMovieTrailerContainer.addView(mMovieTrailerItem);
             }
 

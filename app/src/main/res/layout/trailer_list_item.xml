@@ -2,19 +2,31 @@
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
              android:layout_width="match_parent"
              android:layout_height="match_parent">
-    <TableRow>
+
+    <TableRow
+        android:gravity="center_vertical">
 
         <ImageView
             android:id="@+id/trailer_play_item"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@drawable/play_button"/>
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/play_button"
+            android:paddingLeft="10dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingRight="10dp"/>
 
         <TextView
             android:id="@+id/trailer_title_item"
             android:layout_width="wrap_content"
-            android:layout_height="50dp"/>
+            android:textAppearance="?android:attr/textAppearanceLarge"/>
 
     </TableRow>
+
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:background="#000" />
 
 </TableLayout>

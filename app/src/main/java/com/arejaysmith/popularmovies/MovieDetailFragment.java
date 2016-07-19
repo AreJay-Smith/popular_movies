@@ -2,12 +2,14 @@ package com.arejaysmith.popularmovies;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,8 +35,6 @@ public class MovieDetailFragment extends Fragment {
     private JSONArray mJason;
     private ArrayList<String> mTrailerUrls;
     private ListView mTrailerView;
-    private ListView list;
-    private CustomAdapter mTrailerAdapter;
     private LinearLayout mMovieTrailerContainer;
 
 
@@ -69,24 +69,42 @@ public class MovieDetailFragment extends Fragment {
 
         }
 
-        final String[] title = mTrailerTitles.toArray(new String[mTrailerTitles.size()]);
+        final String[] titles = mTrailerTitles.toArray(new String[mTrailerTitles.size()]);
+        final String[] urls = mTrailerUrls.toArray(new String[mTrailerUrls.size()]);
 
         // Call to set up the adapter and make the changes
-        addRowView(title);
+        addRowView(titles, urls);
 
     }
 
-    private void addRowView(String[] trailerTitles){
+    private void addRowView(String[] trailerTitles, final String[] trailerUrls){
 
         if (trailerTitles != null) {
 
-            for (String trailer : trailerTitles) {
+            for (int i = 0; i < trailerTitles.length; i++) {
 
-                View mMovieTrailerItem = LayoutInflater.from(getActivity()).inflate(
-                        R.layout.trailer_list_item, null);
+                if(trailerTitles.length == trailerUrls.length) {
 
-                // New data is back from the server.  Hooray!
-                mMovieTrailerContainer.addView(mMovieTrailerItem);
+                    View mMovieTrailerItem = LayoutInflater.from(getActivity()).inflate(
+                            R.layout.trailer_list_item, null);
+
+                    final String curURL = trailerUrls[i];
+
+                    mMovieTrailerItem.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+
+                            Log.v("The movie url is: ", curURL);
+                           startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(curURL)));
+                        }
+                    });
+
+                    TextView mMovieTrailerTitle = (TextView) mMovieTrailerItem.findViewById(R.id.trailer_title_item);
+                    mMovieTrailerTitle.setText(trailerTitles[i]);
+
+                    // New data is back from the server.  Hooray!
+                    mMovieTrailerContainer.addView(mMovieTrailerItem);
+                }
             }
 
         }
@@ -136,19 +154,6 @@ public class MovieDetailFragment extends Fragment {
         synopsisView.setText(mMovie.getDescription());
 
         mMovieTrailerContainer = (LinearLayout) view.findViewById(R.id.movie_trailer_container);
-
-        ArrayList<String> hello = new ArrayList<String>();
-        hello.add("Hello");
-        hello.add("from");
-        hello.add("the");
-        hello.add("other");
-        hello.add("side");
-
-        // Create adapter
-        mTrailerAdapter = new CustomAdapter(hello, getActivity());
-        ListView listView = (ListView) view.findViewById(R.id.trailer_list);
-        listView.setAdapter(mTrailerAdapter);
-
 
         return view;
     }

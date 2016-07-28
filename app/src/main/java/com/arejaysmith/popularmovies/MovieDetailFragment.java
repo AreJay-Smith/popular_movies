@@ -77,6 +77,11 @@ public class MovieDetailFragment extends Fragment {
 
     }
 
+    private void getMovieReviewData(ArrayList<MovieReview> movieReviewData) {
+
+
+    }
+
     private void addRowView(String[] trailerTitles, final String[] trailerUrls){
 
         if (trailerTitles != null) {
@@ -119,6 +124,9 @@ public class MovieDetailFragment extends Fragment {
 
             FetchMovieTrailersTask trailerTask = new FetchMovieTrailersTask(this);
             trailerTask.execute(Integer.toString(mMovie.getId()));
+
+            FetchMovieReviewsTask reviewsTask = new FetchMovieReviewsTask(this);
+            reviewsTask.execute(Integer.toString(mMovie.getId()));
         }else {
 
             // TODO: create a broadcast receiver for when a connection is available
@@ -185,14 +193,5 @@ public class MovieDetailFragment extends Fragment {
             return row;
         }
 
-    }
-
-
-
-    private static class trailerHolder{
-
-        public TextView trailerTitle;
-
-        public  ImageView playTrailerImg;
     }
 }

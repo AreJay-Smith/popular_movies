@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_height="100dp"
+              android:layout_width="match_parent"
+              android:orientation="vertical">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="99dp">
+
+        <TextView
+            android:id="@+id/reviews_name"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Hello Name"
+            android:paddingLeft="10dp"
+            android:textSize="20sp"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:gravity="center_vertical"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#767676"
+        android:layout_gravity="bottom"/>
+
+</LinearLayout>

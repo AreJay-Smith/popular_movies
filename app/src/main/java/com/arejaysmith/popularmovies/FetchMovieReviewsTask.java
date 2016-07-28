@@ -143,5 +143,12 @@ public class FetchMovieReviewsTask extends AsyncTask<String, Void, ArrayList<Mov
 
         return null;
     }
+
+    @Override
+    protected void onPostExecute(ArrayList<MovieReview> movieReviews) {
+        super.onPostExecute(movieReviews);
+
+        outer.setMovieReviewData(movieReviews);
+    }
 }
 

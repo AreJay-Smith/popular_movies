@@ -1,9 +1,6 @@
 package com.arejaysmith.popularmovies;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -13,8 +10,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -24,8 +19,6 @@ import android.widget.Toast;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 
@@ -33,9 +26,11 @@ import java.util.ArrayList;
 public class MovieDetailFragment extends Fragment {
 
     private JSONArray mJason;
-    private ArrayList<String> mTrailerUrls;
+    private ArrayList<MovieTrailer> mTrailerData;
+    private ArrayList<MovieReview> mReviewData;
     private ListView mTrailerView;
     private LinearLayout mMovieTrailerContainer;
+
 
 
     public MovieDetailFragment() {
@@ -48,72 +43,69 @@ public class MovieDetailFragment extends Fragment {
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    public void createTrailerTitleArray(JSONArray trailers) throws JSONException {
+    public void setTrailerData(ArrayList<MovieTrailer> trailers) {
 
-        ArrayList<String> mTrailerTitles = new ArrayList<String>();
-        ArrayList<String> mTrailerUrls = new ArrayList<String>();
-
-        try {
-
-            for (int i = 0; i < trailers.length(); i++) {
-
-                JSONObject currentObject = trailers.getJSONObject(i);
-
-                String title = currentObject.getString("title");
-                String url = currentObject.getString("url");
-
-                mTrailerTitles.add(title);
-                mTrailerUrls.add(url);
-            }
-        }catch (JSONException e){
-
-        }
-
-        final String[] titles = mTrailerTitles.toArray(new String[mTrailerTitles.size()]);
-        final String[] urls = mTrailerUrls.toArray(new String[mTrailerUrls.size()]);
+        mTrailerData = trailers;
 
         // Call to set up the adapter and make the changes
-        addRowView(titles, urls);
+        addRowView();
 
     }
 
-    private void getMovieReviewData(ArrayList<MovieReview> movieReviewData) {
+    public void setMovieReviewData(ArrayList<MovieReview> movieReviewData) {
 
+        mReviewData = movieReviewData;
 
+        addRowView();
     }
 
-    private void addRowView(String[] trailerTitles, final String[] trailerUrls){
+    private void addRowView(){
 
-        if (trailerTitles != null) {
+        if (mTrailerData != null && mReviewData != null) {
 
-            for (int i = 0; i < trailerTitles.length; i++) {
+            for (int i = 0; i < mTrailerData.size(); i++) {
 
-                if(trailerTitles.length == trailerUrls.length) {
+                MovieTrailer currentTrailer = new MovieTrailer();
+                currentTrailer = mTrailerData.get(i);
 
-                    View mMovieTrailerItem = LayoutInflater.from(getActivity()).inflate(
-                            R.layout.trailer_list_item, null);
+                View mMovieTrailerItem = LayoutInflater.from(getActivity()).inflate(
+                        R.layout.trailer_list_item, null);
 
-                    final String curURL = trailerUrls[i];
+                final String curURL = currentTrailer.getTrailerUrl();
 
-                    mMovieTrailerItem.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
+                mMovieTrailerItem.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
 
-                            Log.v("The movie url is: ", curURL);
-                           startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(curURL)));
-                        }
-                    });
+                        Log.v("The movie url is: ", curURL);
+                       startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(curURL)));
+                    }
+                });
 
-                    TextView mMovieTrailerTitle = (TextView) mMovieTrailerItem.findViewById(R.id.trailer_title_item);
-                    mMovieTrailerTitle.setText(trailerTitles[i]);
+                TextView mMovieTrailerTitle = (TextView) mMovieTrailerItem.findViewById(R.id.trailer_title_item);
+                mMovieTrailerTitle.setText(currentTrailer.getTrailerTitle());
 
-                    // New data is back from the server.  Hooray!
-                    mMovieTrailerContainer.addView(mMovieTrailerItem);
+                // New data is back from the server.  Hooray!
+                mMovieTrailerContainer.addView(mMovieTrailerItem);
                 }
-            }
 
+            for (int x =0; x < mReviewData.size(); x++) {
+
+                MovieReview currMovieReview = new MovieReview();
+                currMovieReview = mReviewData.get(x);
+
+                View mMovieReviewItem = LayoutInflater.from(getActivity()).inflate(
+                        R.layout.review_list_item, null);
+
+                TextView mMovieReview = (TextView) mMovieReviewItem.findViewById(R.id.reviews_name);
+                mMovieReview.setText("Review by: " + currMovieReview.getAuthor());
+
+                mMovieTrailerContainer.addView(mMovieReviewItem);
+            }
         }
+
     }
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -166,32 +158,5 @@ public class MovieDetailFragment extends Fragment {
         return view;
     }
 
-    public class CustomAdapter extends ArrayAdapter<String> {
 
-        private ArrayList<String> dataSet;
-        Activity mContext;
-
-        public CustomAdapter(ArrayList<String> data, Activity context) {
-            super(context, R.layout.trailer_list_item, data);
-            this.dataSet = data;
-            this.mContext=context;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            LayoutInflater layoutInflater = mContext.getLayoutInflater();
-            View row = layoutInflater.inflate(R.layout.trailer_list_item, null, true);
-
-            TextView trailerTitle = (TextView) row.findViewById(R.id.trailer_title_item);
-//            ImageView trailerImg = (ImageView) row.findViewById(R.id.trailer_play_item);
-//            trailerImg.setImageDrawable(R.drawable.trailer_play);
-
-            trailerTitle.setText(dataSet.get(position));
-
-
-            return row;
-        }
-
-    }
 }

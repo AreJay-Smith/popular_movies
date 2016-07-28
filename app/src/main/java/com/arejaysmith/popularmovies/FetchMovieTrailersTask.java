@@ -14,13 +14,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 
 import com.arejaysmith.popularmovies.MovieDetailFragment;
 
 /**
  * Created by Urge_Smith on 7/9/16.
  */
-public class FetchMovieTrailersTask extends AsyncTask<String, Void, JSONArray> {
+public class FetchMovieTrailersTask extends AsyncTask<String, Void, ArrayList<MovieTrailer>> {
 
     final MovieDetailFragment outer;
     private final String LOG_TAG = FetchMovieTrailersTask.class.getSimpleName();
@@ -30,7 +31,7 @@ public class FetchMovieTrailersTask extends AsyncTask<String, Void, JSONArray> {
     }
 
     @Override
-    protected JSONArray doInBackground(String... params) {
+    protected ArrayList<MovieTrailer> doInBackground(String... params) {
 
         //Holds the connection and buffer
         HttpURLConnection urlConnection = null;
@@ -109,7 +110,7 @@ public class FetchMovieTrailersTask extends AsyncTask<String, Void, JSONArray> {
 
         try{
 
-            return cleanTrailerDataFromJson(trailersJsonStr);
+            return parseTrailerDataFromJson(trailersJsonStr);
         }catch (JSONException e) {
 
             Log.e(LOG_TAG, e.getMessage());
@@ -118,43 +119,40 @@ public class FetchMovieTrailersTask extends AsyncTask<String, Void, JSONArray> {
         return null;
     }
 
-    public JSONArray cleanTrailerDataFromJson(String trailers) throws JSONException{
+    public ArrayList<MovieTrailer> parseTrailerDataFromJson(String trailers) throws JSONException{
 
-        JSONArray trailerArray = new JSONArray();
         JSONObject trailersObject = new JSONObject(trailers);
         JSONArray  arrayOfObjects = trailersObject.getJSONArray("results");
+        ArrayList<MovieTrailer> movieTrailerArrayList = new ArrayList<>();
 
         try{
 
             for (int i = 0; i < arrayOfObjects.length(); i++) {
 
                 JSONObject currentObject = arrayOfObjects.getJSONObject(i);
+                MovieTrailer movieTrailer = new MovieTrailer();
 
-                String trailerTitle = currentObject.getString("name");
-                String trailerURL = "https://www.youtube.com/watch?v=" + currentObject.getString("key");
+                movieTrailer.setTrailerTitle(currentObject.getString("name"));
+                movieTrailer.setTrailerUrl("https://www.youtube.com/watch?v=" + currentObject.getString("key"));
 
-                JSONObject item = new JSONObject();
-                item.put("title", trailerTitle);
-                item.put("url", trailerURL);
-
-                trailerArray.put(item);
+                movieTrailerArrayList.add(movieTrailer);
             }
 
         }catch (JSONException e){
 
-            Log.e(LOG_TAG, "Trailer JSON: " + trailerArray.toString());
+            Log.e(LOG_TAG, "Trailer JSON: " + movieTrailerArrayList.toString());
         }
 
-        return trailerArray;
+        return movieTrailerArrayList;
     }
 
     @Override
-    protected void onPostExecute(JSONArray trailers) {
+    protected void onPostExecute(ArrayList<MovieTrailer> trailers) {
 
         Log.v("My JSON: ", trailers.toString());
         try {
-            outer.createTrailerTitleArray(trailers);
-        }catch (JSONException e){
+            outer.setTrailerData(trailers);
+        }catch (Exception e){
 
         }
 

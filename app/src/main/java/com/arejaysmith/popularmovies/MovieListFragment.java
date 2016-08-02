@@ -39,7 +39,9 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -136,7 +138,7 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
                         Movie movieItem = mMovieItems.get(position);
                         Intent mIntent = new Intent(getActivity(), MovieDetail.class);
                         Bundle mBundle = new Bundle();
-                        mBundle.putParcelable("test", movieItem);
+                        mBundle.putParcelable("movie", movieItem);
                         mIntent.putExtras(mBundle);
 
                         startActivity(mIntent);
@@ -228,7 +230,11 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
                 movie.setTitle(currentObject.getString("original_title"));
                 movie.setDescription(currentObject.getString("overview"));
                 movie.setRating(currentObject.getDouble("vote_average"));
-                movie.setDate(currentObject.getString("release_date"));
+
+                //ParseDate
+                Date date = new SimpleDateFormat("yyyy-MM-dd").parse(currentObject.getString("release_date"));
+                String formattedDate = new SimpleDateFormat("MM/dd/yyyy").format(date);
+                movie.setDate(formattedDate);
 
                 // Make adjustments for image
                 String posterPath = "http://image.tmdb.org/t/p/w500" + currentObject.getString("poster_path");
@@ -241,6 +247,8 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
             }
 
             } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 

@@ -3,7 +3,7 @@ package com.arejaysmith.popularmovies;
 /**
  * Created by Urge_Smith on 7/27/16.
  */
-public class MovieTrailer {
+public class MovieTrailer{
 
     private String trailerTitle;
     private String trailerUrl;

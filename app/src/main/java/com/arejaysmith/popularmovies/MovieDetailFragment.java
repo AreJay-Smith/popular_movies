@@ -89,9 +89,9 @@ public class MovieDetailFragment extends Fragment {
                 mMovieTrailerContainer.addView(mMovieTrailerItem);
                 }
 
-            for (int x =0; x < mReviewData.size(); x++) {
+            for (int x = 0; x < mReviewData.size(); x++) {
 
-                MovieReview currMovieReview = new MovieReview();
+                MovieReview currMovieReview;
                 currMovieReview = mReviewData.get(x);
 
                 View mMovieReviewItem = LayoutInflater.from(getActivity()).inflate(
@@ -99,6 +99,22 @@ public class MovieDetailFragment extends Fragment {
 
                 TextView mMovieReview = (TextView) mMovieReviewItem.findViewById(R.id.reviews_name);
                 mMovieReview.setText("Review by: " + currMovieReview.getAuthor());
+
+                // Declare as final to pass into onlclick listenter
+                final MovieReview review = currMovieReview;
+
+                mMovieReviewItem.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+
+                        Intent mReviewIntent = new Intent(getActivity(), ReviewActivity.class);
+                        Bundle mBundle = new Bundle();
+                        mBundle.putParcelable("review", review);
+                        mReviewIntent.putExtras(mBundle);
+
+                        startActivity(mReviewIntent);
+                    }
+                });
 
                 mMovieTrailerContainer.addView(mMovieReviewItem);
             }
@@ -110,7 +126,7 @@ public class MovieDetailFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Movie mMovie = getActivity().getIntent().getParcelableExtra("test");
+        Movie mMovie = getActivity().getIntent().getParcelableExtra("movie");
 
         if (isNetworkAvailable()) {
 
@@ -135,7 +151,7 @@ public class MovieDetailFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_movie_detail, container, false);
 
-        Movie mMovie = getActivity().getIntent().getParcelableExtra("test");
+        Movie mMovie = getActivity().getIntent().getParcelableExtra("movie");
 
         // Set title
         TextView titleView = (TextView) view.findViewById(R.id.movie_detail_title);
@@ -148,7 +164,7 @@ public class MovieDetailFragment extends Fragment {
         releaseView.setText(mMovie.getDate());
 
         TextView ratingView = (TextView) view.findViewById(R.id.movie_detail_rating);
-        ratingView.setText(Double.toString(mMovie.getRating()));
+        ratingView.setText(Double.toString(mMovie.getRating()) + " / 10");
 
         TextView synopsisView = (TextView) view.findViewById(R.id.movie_detail_synopsis);
         synopsisView.setText(mMovie.getDescription());

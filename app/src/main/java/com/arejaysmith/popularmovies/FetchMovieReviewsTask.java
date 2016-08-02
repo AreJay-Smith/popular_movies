@@ -121,13 +121,13 @@ public class FetchMovieReviewsTask extends AsyncTask<String, Void, ArrayList<Mov
 
         try {
             ArrayList<MovieReview> movieReviewArrayList = new ArrayList<MovieReview>();
-            MovieReview movieReview = new MovieReview();
             JSONObject reviewObject = new JSONObject(reviews);
             JSONArray jsonReviewArray = reviewObject.getJSONArray("results");
 
             for ( int i = 0; i < jsonReviewArray.length(); i++) {
 
                 JSONObject currentReview = jsonReviewArray.getJSONObject(i);
+                MovieReview movieReview = new MovieReview();
 
                 movieReview.setAuthor(currentReview.getString("author"));
                 movieReview.setContent(currentReview.getString("content"));
@@ -144,6 +144,7 @@ public class FetchMovieReviewsTask extends AsyncTask<String, Void, ArrayList<Mov
         return null;
     }
 
+    //Return all the reviews to the main thread
     @Override
     protected void onPostExecute(ArrayList<MovieReview> movieReviews) {
         super.onPostExecute(movieReviews);

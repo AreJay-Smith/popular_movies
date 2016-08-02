@@ -101,6 +101,14 @@
                     android:layout_marginLeft="20dp"
                     android:layout_marginBottom="20dp"/>
 
+                <Button
+                    android:layout_width="150dp"
+                    android:layout_height="60dp"
+                    android:text="Add to Favorites"
+                    android:textColor="@color/colorAccent"
+                    android:background="@color/colorFavorites"
+                    android:layout_marginLeft="20dp"/>
+
             </LinearLayout>
 
         </LinearLayout>

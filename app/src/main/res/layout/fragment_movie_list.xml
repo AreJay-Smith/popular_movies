@@ -10,8 +10,15 @@
     android:id="@+id/movie_recycler_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingTop="?attr/actionBarSize">
+    android:paddingTop="?attr/actionBarSize"/>
 
+    <TextView
+        android:id="@+id/empty_movie_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="No Movies to Display"
+        android:textColor="@color/colorGreenBar"
+        android:visibility="gone"
+        android:gravity="center"/>
 
-    </android.support.v7.widget.RecyclerView>
 </RelativeLayout>

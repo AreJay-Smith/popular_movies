@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.arejaysmith.popularmovies.MovieDetail">
+    tools:context=".MovieDetailActivity">
     <!--tools:showIn="@layout/activity_movie_detail">-->
 
     <LinearLayout
@@ -102,6 +102,7 @@
                     android:layout_marginBottom="20dp"/>
 
                 <Button
+                    android:id="@+id/add_to_favorites"
                     android:layout_width="150dp"
                     android:layout_height="60dp"
                     android:text="Add to Favorites"

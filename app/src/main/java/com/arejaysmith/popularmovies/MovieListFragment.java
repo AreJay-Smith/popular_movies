@@ -7,14 +7,11 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -23,7 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TableRow;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
@@ -36,21 +33,23 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 
 public class MovieListFragment extends Fragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private RecyclerView mMovieRecyclerView;
-    private ArrayList<Movie> mMovieItems = new ArrayList<>();
+    private List<Movie> mMovieItems = new ArrayList<>();
+    private FavoritesHolder mFavorites;
     private Context context = getActivity();
+    private String settings;
+    private MovieAdapter mAdapter;
+    private TextView mEmptyList;
 
 
     public MovieListFragment() {
@@ -67,17 +66,33 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (isNetworkAvailable()) {
+        if (savedInstanceState != null) {
 
-            FetchMovieTask movieTask = new FetchMovieTask();
-            movieTask.execute();
-        }else {
+            // Grab the previous state
+            mMovieItems = savedInstanceState.getParcelableArrayList("movies");
+        } else {
 
-            // TODO: create a broadcast receiver for when a connection is available
-            Toast.makeText(getActivity(), "No internet connection",
-                    Toast.LENGTH_LONG).show();
+            SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            settings = mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular));
+            if (settings.equals("favorites")) {
+                getActivity().setTitle("Your Favorites");
+                mFavorites = new FavoritesHolder(getActivity());
+                mMovieItems = mFavorites.getFavorites();
+
+            } else {
+
+                if (isNetworkAvailable()) {
+                    FetchMovieTask movieTask = new FetchMovieTask();
+                    movieTask.execute();
+                } else {
+
+                    // TODO: create a broadcast receiver for when a connection is available
+                    Toast.makeText(getActivity(), "No internet connection",
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+
         }
-
     }
 
     @Override
@@ -132,11 +147,12 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
         // Set listener
         mMovieRecyclerView.addOnItemTouchListener(
                 new RecyclerItemClickListener(getActivity(), new RecyclerItemClickListener.OnItemClickListener() {
-                    @Override public void onItemClick(View view, int position) {
+                    @Override
+                    public void onItemClick(View view, int position) {
 
                         // Pass movie object to detail activity using parcelable
                         Movie movieItem = mMovieItems.get(position);
-                        Intent mIntent = new Intent(getActivity(), MovieDetail.class);
+                        Intent mIntent = new Intent(getActivity(), MovieDetailActivity.class);
                         Bundle mBundle = new Bundle();
                         mBundle.putParcelable("movie", movieItem);
                         mIntent.putExtras(mBundle);
@@ -147,7 +163,16 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
         );
 
         // Set up the layout for the grid in the recycler view
-        mMovieRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),2));
+        mMovieRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
+
+        // Make sure the recyclerview isn't empty
+        mEmptyList = (TextView) rootView.findViewById(R.id.empty_movie_list);
+        if (mMovieItems.size() > 1) {
+            setupAdapter();
+        } else {
+            mMovieRecyclerView.setVisibility(View.GONE);
+            mEmptyList.setVisibility(View.VISIBLE);
+        }
 
         // Inflate the layout for this fragment
         return rootView;
@@ -180,7 +205,7 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
 
 
         @Override
-        public PosterHolder onCreateViewHolder (ViewGroup viewGroup, int viewType) {
+        public PosterHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
 
             View imageView = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.poster_layout, viewGroup, false);
 
@@ -219,32 +244,32 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
 
             try {
 
-            for (int i = 0; i <movieResults.length(); i++) {
+                for (int i = 0; i < movieResults.length(); i++) {
 
-                // Get each object
-                JSONObject currentObject = movieResults.getJSONObject(i);
-                Movie movie = new Movie();
+                    // Get each object
+                    JSONObject currentObject = movieResults.getJSONObject(i);
+                    Movie movie = new Movie();
 
-                //grab needed variables
-                movie.setId(currentObject.getInt("id"));
-                movie.setTitle(currentObject.getString("original_title"));
-                movie.setDescription(currentObject.getString("overview"));
-                movie.setRating(currentObject.getDouble("vote_average"));
+                    //grab needed variables
+                    movie.setId(currentObject.getInt("id"));
+                    movie.setTitle(currentObject.getString("original_title"));
+                    movie.setDescription(currentObject.getString("overview"));
+                    movie.setRating(currentObject.getDouble("vote_average"));
 
-                //ParseDate
-                Date date = new SimpleDateFormat("yyyy-MM-dd").parse(currentObject.getString("release_date"));
-                String formattedDate = new SimpleDateFormat("MM/dd/yyyy").format(date);
-                movie.setDate(formattedDate);
+                    //ParseDate
+                    Date date = new SimpleDateFormat("yyyy-MM-dd").parse(currentObject.getString("release_date"));
+                    String formattedDate = new SimpleDateFormat("MM/dd/yyyy").format(date);
+                    movie.setDate(formattedDate);
 
-                // Make adjustments for image
-                String posterPath = "http://image.tmdb.org/t/p/w500" + currentObject.getString("poster_path");
-                movie.setPosterPath(posterPath);
+                    // Make adjustments for image
+                    String posterPath = "http://image.tmdb.org/t/p/w500" + currentObject.getString("poster_path");
+                    movie.setPosterPath(posterPath);
 
-                Log.v(LOG_TAG, posterPath);
+                    Log.v(LOG_TAG, posterPath);
 
-                moviesArray.add(movie);
+                    moviesArray.add(movie);
 
-            }
+                }
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -316,7 +341,7 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
                 Log.v(LOG_TAG, "Forecast JSON String: " + moviesJsonStr);
 
                 return null;
-            }finally{
+            } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
                 }
@@ -348,7 +373,7 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
             mMovieItems = movies;
 
             // If there's no data then don't start the adapter
-            if(mMovieItems != null) {
+            if (mMovieItems != null) {
                 setupAdapter();
             }
 
@@ -368,8 +393,17 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
 
     // Update the adapter after onpost execute or whenever called
     private void setupAdapter() {
-        if (isAdded()){
-            mMovieRecyclerView.setAdapter(new MovieAdapter(mMovieItems));
+        if (isAdded()) {
+
+            //Make sure recycler view is visible
+            if (mMovieItems.size() > 0) {
+                mMovieRecyclerView.setVisibility(View.VISIBLE);
+                mMovieRecyclerView.setAdapter(new MovieAdapter(mMovieItems));
+                mEmptyList.setVisibility(View.GONE);
+            } else {
+                mMovieRecyclerView.setVisibility(View.GONE);
+                mEmptyList.setVisibility(View.VISIBLE);
+            }
         }
     }
 
@@ -379,6 +413,9 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
 
         //TODO: Create bundle to pass between saved instance
 
+        ArrayList<Movie> movies = ((ArrayList<Movie>) mMovieItems);
+        savedInstanceState.putParcelableArrayList("movies", movies);
+
 
         // Always call the superclass so it can save the view hierarchy state
         super.onSaveInstanceState(savedInstanceState);
@@ -387,8 +424,18 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 
-        FetchMovieTask movieTask = new FetchMovieTask();
-        movieTask.execute();
+        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        settings = mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular));
+
+        if (settings.equals("favorites")) {
+            mFavorites = new FavoritesHolder(getActivity());
+            mMovieItems = mFavorites.getFavorites();
+            setupAdapter();
+            getActivity().setTitle("Your Favorites");
+} else {
+            FetchMovieTask movieTask = new FetchMovieTask();
+            movieTask.execute();
+        }
 
     }
 

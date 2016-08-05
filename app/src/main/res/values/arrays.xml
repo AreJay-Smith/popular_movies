@@ -4,10 +4,13 @@
         <string-array name="pref_movie_list_options">
             <item>@string/movie_list_label_popular</item>
             <item>@string/movie_list_label_top_rated</item>
+            <item>Favorites</item>
         </string-array>
 
         <string-array name="pref_movie_list_values">
             <item>@string/movie_list_popular</item>
             <item>@string/movie_list_top_rated</item>
+            <item>favorites</item>
         </string-array>
+
     </resources>

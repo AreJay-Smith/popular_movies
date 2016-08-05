@@ -1,6 +1,8 @@
 package com.arejaysmith.popularmovies;
 
+import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -10,17 +12,24 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.arejaysmith.popularmovies.database.MovieBaseHelper;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import static com.arejaysmith.popularmovies.FavoritesHolder.*;
 
 
 public class MovieDetailFragment extends Fragment {
@@ -30,7 +39,12 @@ public class MovieDetailFragment extends Fragment {
     private ArrayList<MovieReview> mReviewData;
     private ListView mTrailerView;
     private LinearLayout mMovieTrailerContainer;
-
+    private Context mContext;
+    private Button mFavorites;
+    private JSONObject mJSONFavorites = new JSONObject();
+    private FavoritesHolder mFavoritesHolder;
+    private List<Movie> mMovieItems;
+    private Movie mMovie;
 
 
     public MovieDetailFragment() {
@@ -50,6 +64,24 @@ public class MovieDetailFragment extends Fragment {
         // Call to set up the adapter and make the changes
         addRowView();
 
+        //add movie reviews to mJSONFavorites
+        try {
+            JSONArray movieTrailers = new JSONArray();
+
+            for (int i = 0; i < trailers.size(); i++) {
+
+                MovieTrailer currentMovie = trailers.get(i);
+
+                JSONObject object = new JSONObject();
+                object.put(currentMovie.getTrailerTitle(), currentMovie.getTrailerUrl());
+                movieTrailers.put(object);
+            }
+
+            mJSONFavorites.put("trailers", movieTrailers.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void setMovieReviewData(ArrayList<MovieReview> movieReviewData) {
@@ -57,9 +89,27 @@ public class MovieDetailFragment extends Fragment {
         mReviewData = movieReviewData;
 
         addRowView();
+
+        //add movie reviews to mJSONFavorites
+        try {
+            JSONArray movieReviews = new JSONArray();
+
+            for (int i = 0; i < movieReviewData.size(); i++) {
+
+                MovieReview currentMovieReview = movieReviewData.get(i);
+
+                JSONObject object = new JSONObject();
+                object.put(currentMovieReview.getAuthor(), currentMovieReview.getContent());
+                movieReviews.put(object);
+            }
+
+            mJSONFavorites.put("reviews", movieReviews.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void addRowView(){
+    private void addRowView() {
 
         if (mTrailerData != null && mReviewData != null) {
 
@@ -78,7 +128,7 @@ public class MovieDetailFragment extends Fragment {
                     public void onClick(View view) {
 
                         Log.v("The movie url is: ", curURL);
-                       startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(curURL)));
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(curURL)));
                     }
                 });
 
@@ -87,7 +137,7 @@ public class MovieDetailFragment extends Fragment {
 
                 // New data is back from the server.  Hooray!
                 mMovieTrailerContainer.addView(mMovieTrailerItem);
-                }
+            }
 
             for (int x = 0; x < mReviewData.size(); x++) {
 
@@ -126,16 +176,31 @@ public class MovieDetailFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Movie mMovie = getActivity().getIntent().getParcelableExtra("movie");
+        mMovie = getActivity().getIntent().getParcelableExtra("movie");
 
-        if (isNetworkAvailable()) {
+        if (isNetworkAvailable() && mMovie != null) {
 
             FetchMovieTrailersTask trailerTask = new FetchMovieTrailersTask(this);
             trailerTask.execute(Integer.toString(mMovie.getId()));
 
             FetchMovieReviewsTask reviewsTask = new FetchMovieReviewsTask(this);
             reviewsTask.execute(Integer.toString(mMovie.getId()));
-        }else {
+
+            try {
+
+                mJSONFavorites.put("movie_id", mMovie.getId());
+                mJSONFavorites.put("title", mMovie.getTitle());
+                mJSONFavorites.put("release_date", mMovie.getDate());
+                mJSONFavorites.put("description", mMovie.getDescription());
+                mJSONFavorites.put("poster", mMovie.getPosterPath());
+                mJSONFavorites.put("score", mMovie.getRating());
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        } else {
 
             // TODO: create a broadcast receiver for when a connection is available
             Toast.makeText(getActivity(), "No internet connection",
@@ -151,7 +216,27 @@ public class MovieDetailFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_movie_detail, container, false);
 
-        Movie mMovie = getActivity().getIntent().getParcelableExtra("movie");
+        final Movie mMovie = getActivity().getIntent().getParcelableExtra("movie");
+        mFavorites = (Button) view.findViewById(R.id.add_to_favorites);
+
+        //check to see if already in database
+        if (checkDb()) {
+
+            mFavorites.setText("Added to Favorites");
+        } else {
+
+            mFavorites.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    mContext = getActivity();
+                    mFavoritesHolder = new FavoritesHolder(mContext);
+                    mFavoritesHolder.addMovie(mMovie);
+                    mFavorites.setText("Added to Favorites");
+                    mFavorites.setOnClickListener(null);
+                }
+            });
+        }
 
         // Set title
         TextView titleView = (TextView) view.findViewById(R.id.movie_detail_title);
@@ -171,7 +256,26 @@ public class MovieDetailFragment extends Fragment {
 
         mMovieTrailerContainer = (LinearLayout) view.findViewById(R.id.movie_trailer_container);
 
+
         return view;
+    }
+
+    private boolean checkDb() {
+
+        mMovieItems = new ArrayList<>();
+        mFavoritesHolder = new FavoritesHolder(getActivity());
+        mMovieItems = mFavoritesHolder.getFavorites();
+        for (int i = 0; i < mMovieItems.size(); i++) {
+
+        Movie movie = mMovieItems.get(i);
+
+            if (movie.getId() == mMovie.getId()) {
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
 

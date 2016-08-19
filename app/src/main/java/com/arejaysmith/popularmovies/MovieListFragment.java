@@ -50,16 +50,11 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
     private String settings;
     private MovieAdapter mAdapter;
     private TextView mEmptyList;
+    private int mSelectedItem = 0;
 
 
     public MovieListFragment() {
         // Required empty public constructor
-    }
-
-    private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getSystemService(context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     @Override
@@ -68,17 +63,17 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
 
         if (savedInstanceState != null) {
 
-            // Grab the previous state
+            // Grab the previous state and the adapter will be set up again in oncreateView
             mMovieItems = savedInstanceState.getParcelableArrayList("movies");
+            mSelectedItem = savedInstanceState.getInt("selected");
         } else {
-
+            // If no saved instance, then check for favorites, if not favorites then launch the async task
             SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
             settings = mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular));
             if (settings.equals("favorites")) {
                 getActivity().setTitle("Your Favorites");
                 mFavorites = new FavoritesHolder(getActivity());
                 mMovieItems = mFavorites.getFavorites();
-
             } else {
 
                 if (isNetworkAvailable()) {
@@ -87,7 +82,7 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
                 } else {
 
                     // TODO: create a broadcast receiver for when a connection is available
-                    Toast.makeText(getActivity(), "No internet connection",
+                    Toast.makeText(getActivity(), "Try again Please. No internet connection",
                             Toast.LENGTH_LONG).show();
                 }
             }
@@ -135,8 +130,10 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        // In case the screen is flipped, grab shared preferences again
+        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        settings = mSharedPreferences.getString(getString(R.string.movie_key), getString(R.string.movie_list_popular));
         View rootView = inflater.inflate(R.layout.fragment_movie_list, container, false);
-
         // Register a new listener to change when the preferences are update
         PreferenceManager.getDefaultSharedPreferences(getActivity())
                 .registerOnSharedPreferenceChangeListener(this);
@@ -152,12 +149,8 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
 
                         // Pass movie object to detail activity using parcelable
                         Movie movieItem = mMovieItems.get(position);
-                        Intent mIntent = new Intent(getActivity(), MovieDetailActivity.class);
-                        Bundle mBundle = new Bundle();
-                        mBundle.putParcelable("movie", movieItem);
-                        mIntent.putExtras(mBundle);
-
-                        startActivity(mIntent);
+                        mSelectedItem = position;
+                        ((Callback) getActivity()).onItemSelected(movieItem);
                     }
                 })
         );
@@ -165,13 +158,13 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
         // Set up the layout for the grid in the recycler view
         mMovieRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
 
-        // Make sure the recyclerview isn't empty
+        // Make sure the recyclerview isn't empty, this will most likely happen with favorites
         mEmptyList = (TextView) rootView.findViewById(R.id.empty_movie_list);
-        if (mMovieItems.size() > 1) {
-            setupAdapter();
-        } else {
+        if (mMovieItems == null && settings.equals("favorites")) {
             mMovieRecyclerView.setVisibility(View.GONE);
             mEmptyList.setVisibility(View.VISIBLE);
+        } else if (mMovieItems != null) {
+            setupAdapter();
         }
 
         // Inflate the layout for this fragment
@@ -337,6 +330,7 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
 
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error: Couldn't get the data", e);
+                e.printStackTrace();
 
                 Log.v(LOG_TAG, "Forecast JSON String: " + moviesJsonStr);
 
@@ -367,13 +361,11 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
         @Override
         protected void onPostExecute(ArrayList<Movie> movies) {
 
-            SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-
             // Set the created list to a local variable
             mMovieItems = movies;
 
             // If there's no data then don't start the adapter
-            if (mMovieItems != null) {
+            if (mMovieItems.size() > 0) {
                 setupAdapter();
             }
 
@@ -400,6 +392,10 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
                 mMovieRecyclerView.setVisibility(View.VISIBLE);
                 mMovieRecyclerView.setAdapter(new MovieAdapter(mMovieItems));
                 mEmptyList.setVisibility(View.GONE);
+                SharedPreferences prefs = getActivity().getSharedPreferences("twoPane", getActivity().MODE_PRIVATE);
+                if (prefs.getBoolean("twoPane", false)) {
+                    ((Data) getActivity()).dataReceived(mMovieItems.get(mSelectedItem));
+                }
             } else {
                 mMovieRecyclerView.setVisibility(View.GONE);
                 mEmptyList.setVisibility(View.VISIBLE);
@@ -407,18 +403,23 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
         }
     }
 
-    @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        // Save the user's current game state
+    public interface Callback {
 
-        //TODO: Create bundle to pass between saved instance
+        //DetailFragmentCallback for when an item has been selected.
+        public void onItemSelected();
 
-        ArrayList<Movie> movies = ((ArrayList<Movie>) mMovieItems);
-        savedInstanceState.putParcelableArrayList("movies", movies);
+        void onItemSelected(Movie movieSelected);
+    }
 
+    public interface Data {
 
-        // Always call the superclass so it can save the view hierarchy state
-        super.onSaveInstanceState(savedInstanceState);
+        void dataReceived(Movie movieSelected);
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getSystemService(context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     @Override
@@ -430,13 +431,29 @@ public class MovieListFragment extends Fragment implements SharedPreferences.OnS
         if (settings.equals("favorites")) {
             mFavorites = new FavoritesHolder(getActivity());
             mMovieItems = mFavorites.getFavorites();
-            setupAdapter();
-            getActivity().setTitle("Your Favorites");
-} else {
+            if (mMovieItems != null) {
+                setupAdapter();
+                getActivity().setTitle("Your Favorites");
+            } else {
+                mMovieRecyclerView.setVisibility(View.GONE);
+                mEmptyList.setVisibility(View.VISIBLE);
+            }
+        } else {
             FetchMovieTask movieTask = new FetchMovieTask();
             movieTask.execute();
         }
+    }
 
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        // Save the user's current game state
+
+        ArrayList<Movie> movies = ((ArrayList<Movie>) mMovieItems);
+        savedInstanceState.putParcelableArrayList("movies", movies);
+        savedInstanceState.putInt("selected", mSelectedItem);
+
+        // Always call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
